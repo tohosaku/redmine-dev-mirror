@@ -1429,7 +1429,7 @@ class IssueTest < ActiveSupport::TestCase
     copy = issue.reload.copy
     assert_difference 'Issue.count', 1+issue.descendants.count do
       assert copy.save
-      assert copy.save
+      assert copy.reload.save
     end
   end
 
@@ -2474,6 +2474,7 @@ class IssueTest < ActiveSupport::TestCase
     relation = new_record(IssueRelation) do
       copy.save!
     end
+    copy.reload
 
     copy.parent_issue_id = parent.id
     assert_save copy
@@ -2728,7 +2729,7 @@ class IssueTest < ActiveSupport::TestCase
                                      :possible_values => ['value1', 'value2', 'value3'],
                                      :multiple => true)
 
-    issue = Issue.create!(:project_id => 1, :tracker_id => 1,
+    issue = Issue.generate!(:project_id => 1, :tracker_id => 1,
                           :subject => 'Test', :author_id => 1)
 
     assert_difference 'Journal.count' do
