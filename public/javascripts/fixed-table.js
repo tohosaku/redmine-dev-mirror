@@ -52,10 +52,10 @@ function getPosition() {
 
     if (rect.top < 0) {
         const hheight = getComputedStyle(headerrow).height;
-        const top = toNum(hheight) + rect.top;
-        return { top: '0', position: 'fixed', left: `${getLeft()}px`, zIndex: 1, tableTop: `${top}px`, tablePosition: 'relative' }
+        const tbodyTop = toNum(hheight) + rect.top;
+        return { top: '0', position: 'fixed', left: `${getLeft()}px`, zIndex: 1, tbodyTop: `${tbodyTop}px`, tbodyPosition: 'relative' }
     } else {
-        return { top: '', position: '', zIndex: '', tableTop: '', tablePosition: '' }
+        return { top: '', position: '', zIndex: '', tbodyTop: '', tbodyPosition: '' }
     }
 }
 
@@ -68,20 +68,24 @@ function getLeft() {
 const columns = getColumnPair();
 
 function toggleFixed() {
-    const pos = getPosition()
+    const pos = getPosition();
     const headerRowStyle = headerrow.style;
 
-    if (typeof pos.left !== 'undefined') {
+    if (typeof pos.left !== 'undefined' && headerRowStyle.left !== pos.left) {
         headerRowStyle.left = pos.left;
     }
 
-    headerRowStyle.top = pos.top;
-    headerRowStyle.position = pos.position;
-    headerRowStyle.zIndex = pos.zIndex;
+    if (headerRowStyle.top !== pos.top) {
+        headerRowStyle.top = pos.top;
+        headerRowStyle.position = pos.position;
+        headerRowStyle.zIndex = pos.zIndex;
+    }
 
     const tbody = firstrow.parentElement;
-    tbody.style.top = pos.tableTop;
-    tbody.style.position = pos.tablePosition;
+    if (tbody.style.top !== pos.tbodyTop || toNum(pos.tbodyTop) > 0) {
+        tbody.style.top = pos.tbodyTop;
+        tbody.style.position = pos.tbodyPosition;
+    }
 }
 
 function resetTable() {
