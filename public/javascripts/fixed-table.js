@@ -46,6 +46,14 @@ class ColumnCollection {
             c.item.setWidth(itemwidth);
             c.head.setWidth(itemwidth);
         });
+        this.updateHeaderRow();
+    }
+
+    updateHeaderRow() {
+        const col = this.columns[0];
+        const hrow = col.head.element.parentElement;
+        const irow = col.item.element.parentElement;
+        hrow.style.width = getComputedStyle(irow).width
     }
     
     clear() {
