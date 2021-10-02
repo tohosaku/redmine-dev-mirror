@@ -42,9 +42,9 @@ class ColumnCollection {
     
     update() {
         this.columns.forEach(c => {
-            const clientwidth = c.item.element.clientWidth;
-            c.item.setWidth(clientwidth);
-            c.head.setWidth(clientwidth);
+            const itemwidth = c.item.element.clientWidth;
+            c.item.setWidth(itemwidth);
+            c.head.setWidth(itemwidth);
         });
     }
     
@@ -88,7 +88,7 @@ class PositionInfo {
 
     update() {
         const pos = this.getPosition();
-        const headerRowStyle = headerrow.style;
+        const headerRowStyle = this.headerrow.style;
     
         if (typeof pos.left !== 'undefined' && headerRowStyle.left !== pos.left) {
             headerRowStyle.left = pos.left;
@@ -118,11 +118,11 @@ class PositionInfo {
 
 const table = document.querySelector('table.issues.list');
 
-const headerrow = table.querySelector('thead tr');
-const firstrow = table.querySelector('tbody tr');
-
 if (table !== null) {
 
+    const headerrow = table.querySelector('thead tr');
+    const firstrow = table.querySelector('tbody tr');
+    
     const columns = new ColumnCollection(Array.from(headerrow.children), Array.from(firstrow.children));
     columns.update();
 
