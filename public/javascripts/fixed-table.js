@@ -19,10 +19,6 @@ function getColumnPair() {
         }));
 }
 
-function getHeight(element) {
-    return getComputedStyle(element).height;
-}
-
 function getWidth(clientWidth, computedstyle) {
     const width = clientWidth - toNum(computedstyle.getPropertyValue('padding-left')) - toNum(computedstyle.getPropertyValue('padding-right'))
     return `${width}px`
@@ -37,13 +33,13 @@ function setColumnWidth() {
         const clientwidth = c.clientWidth();
         c.item.style.width = getWidth(clientwidth , c.item.computedStyle);
         c.head.style.width = getWidth(clientwidth , c.head.computedStyle);
-    })
+    });
 }
 
 function clear() {
     columns.forEach(c => {
-        c.itemStyle.width = '';
-        c.headStyle.width = '';
+        c.item.style.width = '';
+        c.head.style.width = '';
     })
 }
 
@@ -95,6 +91,6 @@ function resetTable() {
 
 if (table !== null) {
     setColumnWidth();
-    document.addEventListener('scroll', toggleFixed, { passive: true });
-    document.addEventListener('resize', resetTable, { passive: true });
+    window.addEventListener('scroll', toggleFixed, { passive: true });
+    window.addEventListener('resize', resetTable, { passive: true });
 }
