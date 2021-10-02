@@ -2,7 +2,7 @@ function toNum(width) {
     return (width.replace(/px/g, '') * 1);
 }
 
-class StyleInfo {
+class ColumnWidth {
 
     constructor(element) {
         this.element = element;
@@ -21,7 +21,7 @@ class StyleInfo {
         this.style.width = `${width}px`;
     }
 
-    clearWidth() {
+    clear() {
         this.style.width = '';
     }
 
@@ -30,17 +30,17 @@ class StyleInfo {
     }
 }
 
-class ColumnStyles {
+class ColumnCollection {
 
     constructor(headers, items) {
         this.columns = items.map((item, i) => 
         ({
-            head: new StyleInfo(headers[i]),
-            item: new StyleInfo(item)
+            head: new ColumnWidth(headers[i]),
+            item: new ColumnWidth(item)
         }));
     }
     
-    setColumnWidth() {
+    update() {
         this.columns.forEach(c => {
             const clientwidth = c.item.element.clientWidth;
             c.item.setWidth(clientwidth);
@@ -50,14 +50,14 @@ class ColumnStyles {
     
     clear() {
         this.columns.forEach(c => {
-            c.item.clearWidth();
-            c.head.clearWidth();
+            c.item.clear();
+            c.head.clear();
         })
     }
 
     reset() {
         this.clear();
-        this.setColumnWidth();
+        this.update();
     }
 }
 
@@ -86,7 +86,7 @@ class PositionInfo {
         return this.rect.left + this.scrollLeft;
     }
 
-    check() {
+    update() {
         const pos = this.getPosition();
         const headerRowStyle = headerrow.style;
     
@@ -123,11 +123,11 @@ const firstrow = table.querySelector('tbody tr');
 
 if (table !== null) {
 
-    const columnStyles = new ColumnStyles(Array.from(headerrow.children), Array.from(firstrow.children));
-    columnStyles.setColumnWidth();
+    const columns = new ColumnCollection(Array.from(headerrow.children), Array.from(firstrow.children));
+    columns.update();
 
     const posInfo = new PositionInfo(table, headerrow, firstrow);
 
-    window.addEventListener('scroll', () => posInfo.check(), { passive: true });
-    window.addEventListener('resize', () => columnStyles.reset(), { passive: true });
+    window.addEventListener('scroll', () => posInfo.update(), { passive: true });
+    window.addEventListener('resize', () => columns.reset(), { passive: true });
 }
