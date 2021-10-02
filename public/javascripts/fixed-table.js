@@ -29,7 +29,8 @@ class ColumnWidth {
 
 class ColumnCollection {
 
-    constructor(headers, items) {
+    constructor(fixedtable, headers, items) {
+        this.fixedtable = fixedtable;
         this.cols = items.map((item, i) => 
         ({
             head: new ColumnWidth(headers[i]),
@@ -43,7 +44,7 @@ class ColumnCollection {
             c.item.setWidth(itemwidth);
             c.head.setWidth(itemwidth);
         });
-        this.updateHeaderRow();
+        this.fixedtable.updateHeaderRow();
     }
     
     clear() {
@@ -57,13 +58,6 @@ class ColumnCollection {
         this.clear();
         this.update();
     }
-
-    updateHeaderRow() {
-        const col = this.cols[0];
-        const hrow = col.head.element.parentElement;
-        const irow = col.item.element.parentElement;
-        hrow.style.width = getComputedStyle(irow).width
-    }
 }
 
 class FixedTable {
@@ -75,7 +69,7 @@ class FixedTable {
     }
 
     init() {
-        this.columns =  new ColumnCollection(Array.from(this.headerrow.children), Array.from(this.itemrow.children));
+        this.columns =  new ColumnCollection(this, Array.from(this.headerrow.children), Array.from(this.itemrow.children));
         this.columns.update();
     }
 
@@ -118,13 +112,13 @@ class FixedTable {
     }
     
     getLeft() {
-        return this.rect.left + this.scrollLeft;
+        return this.rect.left + window.pageXOffset;
     }
 
-    get scrollLeft() {
-        return window.pageXOffset;
+    updateHeaderRow() {
+        this.headerrow.style.width = getComputedStyle(this.itemrow).width
     }
-    
+
     get rect() {
         return this.table.getBoundingClientRect();
     }
