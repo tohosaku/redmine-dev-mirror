@@ -8,16 +8,12 @@ class ColumnWidth {
         this.element = element;
     }
 
-    get computedStyle() {
-        return getComputedStyle(this.element);
-    }
-
     get style() {
         return this.element.style;
     }
 
     setWidth(clientWidth) {
-        const width = clientWidth - this.getPropertyValue('padding-left') - this.getPropertyValue('padding-right')
+        const width = clientWidth - this.css('padding-left') - this.css('padding-right')
         this.style.width = `${width}px`;
     }
 
@@ -25,15 +21,16 @@ class ColumnWidth {
         this.style.width = '';
     }
 
-    getPropertyValue(key) {
-        return toNum(this.computedStyle.getPropertyValue(key));
+    css(key) {
+        const computedStyle = getComputedStyle(this.element)
+        return toNum(computedStyle.getPropertyValue(key));
     }
 }
 
 class ColumnCollection {
 
     constructor(headers, items) {
-        this.columns = items.map((item, i) => 
+        this.cols = items.map((item, i) => 
         ({
             head: new ColumnWidth(headers[i]),
             item: new ColumnWidth(item)
@@ -41,23 +38,16 @@ class ColumnCollection {
     }
     
     update() {
-        this.columns.forEach(c => {
+        this.cols.forEach(c => {
             const itemwidth = c.item.element.clientWidth;
             c.item.setWidth(itemwidth);
             c.head.setWidth(itemwidth);
         });
         this.updateHeaderRow();
     }
-
-    updateHeaderRow() {
-        const col = this.columns[0];
-        const hrow = col.head.element.parentElement;
-        const irow = col.item.element.parentElement;
-        hrow.style.width = getComputedStyle(irow).width
-    }
     
     clear() {
-        this.columns.forEach(c => {
+        this.cols.forEach(c => {
             c.item.clear();
             c.head.clear();
         })
@@ -67,14 +57,51 @@ class ColumnCollection {
         this.clear();
         this.update();
     }
+
+    updateHeaderRow() {
+        const col = this.cols[0];
+        const hrow = col.head.element.parentElement;
+        const irow = col.item.element.parentElement;
+        hrow.style.width = getComputedStyle(irow).width
+    }
 }
 
-class PositionInfo {
+class FixedTable {
 
     constructor(table, headerrow, itemrow) {
         this.table = table;
         this.headerrow = headerrow;
         this.itemrow = itemrow
+    }
+
+    init() {
+        this.columns =  new ColumnCollection(Array.from(this.headerrow.children), Array.from(this.itemrow.children));
+        this.columns.update();
+    }
+
+    update() {
+        const pos = this.getPosition();
+        const headerRowStyle = this.headerrow.style;
+    
+        if (typeof pos.left !== 'undefined' && headerRowStyle.left !== pos.left) {
+            headerRowStyle.left = pos.left;
+        }
+    
+        if (headerRowStyle.top !== pos.top) {
+            headerRowStyle.top = pos.top;
+            headerRowStyle.position = pos.position;
+            headerRowStyle.zIndex = pos.zIndex;
+        }
+    
+        const tbodyStyle = this.itemrow.parentElement.style;
+        if (tbodyStyle.top !== pos.tbodyTop || toNum(pos.tbodyTop) > 0) {
+            tbodyStyle.top = pos.tbodyTop;
+            tbodyStyle.position = pos.tbodyPosition;
+        }
+    }
+
+    reset() {
+        this.columns.reset();
     }
 
     getPosition() {
@@ -94,27 +121,6 @@ class PositionInfo {
         return this.rect.left + this.scrollLeft;
     }
 
-    update() {
-        const pos = this.getPosition();
-        const headerRowStyle = this.headerrow.style;
-    
-        if (typeof pos.left !== 'undefined' && headerRowStyle.left !== pos.left) {
-            headerRowStyle.left = pos.left;
-        }
-    
-        if (headerRowStyle.top !== pos.top) {
-            headerRowStyle.top = pos.top;
-            headerRowStyle.position = pos.position;
-            headerRowStyle.zIndex = pos.zIndex;
-        }
-    
-        const tbody = this.itemrow.parentElement;
-        if (tbody.style.top !== pos.tbodyTop || toNum(pos.tbodyTop) > 0) {
-            tbody.style.top = pos.tbodyTop;
-            tbody.style.position = pos.tbodyPosition;
-        }
-    }
-
     get scrollLeft() {
         return window.pageXOffset;
     }
@@ -132,10 +138,8 @@ if (table !== null) {
     const headerrow = table.querySelector('thead tr');
     const firstrow = table.querySelector('tbody tr');
     
-    const columns = new ColumnCollection(Array.from(headerrow.children), Array.from(firstrow.children));
-    columns.update();
-
-    const posInfo = new PositionInfo(table, headerrow, firstrow);
+    const fixedtable = new FixedTable(table, headerrow, firstrow);
+    fixedtable.init();
 
     const rafFactory = (func) => () => {
         if (!ticking) {
@@ -147,6 +151,6 @@ if (table !== null) {
         }
     }
 
-    window.addEventListener('scroll', rafFactory(() => posInfo.update()), { passive: true });
-    window.addEventListener('resize', rafFactory(() => columns.reset()), { passive: true });
+    window.addEventListener('scroll', rafFactory(() => fixedtable.update()), { passive: true });
+    window.addEventListener('resize', rafFactory(() => fixedtable.reset()), { passive: true });
 }
