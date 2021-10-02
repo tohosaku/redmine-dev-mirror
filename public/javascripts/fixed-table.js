@@ -117,6 +117,7 @@ class PositionInfo {
 }
 
 const table = document.querySelector('table.issues.list');
+let ticking = false;
 
 if (table !== null) {
 
@@ -128,6 +129,16 @@ if (table !== null) {
 
     const posInfo = new PositionInfo(table, headerrow, firstrow);
 
-    window.addEventListener('scroll', () => posInfo.update(), { passive: true });
-    window.addEventListener('resize', () => columns.reset(), { passive: true });
+    const rafFactory = (func) => () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+              ticking = false;
+              func();
+            });
+            ticking = true;
+        }
+    }
+
+    window.addEventListener('scroll', rafFactory(() => posInfo.update()), { passive: true });
+    window.addEventListener('resize', rafFactory(() => columns.reset()), { passive: true });
 }
