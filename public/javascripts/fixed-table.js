@@ -95,6 +95,7 @@ class FixedTable {
     }
 
     reset() {
+        this.update();
         this.columns.reset();
     }
 
