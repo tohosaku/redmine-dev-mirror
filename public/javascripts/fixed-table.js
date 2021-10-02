@@ -100,7 +100,7 @@ class FixedTable {
         }
     
         const tbodyStyle = this.itemrow.parentElement.style;
-        if (tbodyStyle.top !== pos.tbodyTop || toNum(pos.tbodyTop) > 0) {
+        if ((pos.tbodyTop == '' || toNum(pos.tbodyTop) > 0) && tbodyStyle.top !== pos.tbodyTop) {
             tbodyStyle.top = pos.tbodyTop;
             tbodyStyle.position = pos.tbodyPosition;
         }
@@ -114,19 +114,21 @@ class FixedTable {
     getPosition() {
         if (this.rect.top < 0) {
             const tableStyle = getComputedStyle(this.table);
-            return { top: '0', position: 'fixed', tableStyle: tableStyle, left: `${this.getLeft()}px`, zIndex: 1, tbodyTop: `${this.getTbodyTop()}px`, tbodyPosition: 'relative' }
+            return { top: '0', position: 'fixed', tableStyle: tableStyle, left: this.getLeft(), zIndex: 1, tbodyTop: this.getTbodyTop(), tbodyPosition: 'relative' }
         } else {
             return { top: '', position: '', tableStyle: '', zIndex: '', tbodyTop: '', tbodyPosition: '' }
         }
     }
 
     getTbodyTop() {
-        const hheight = getComputedStyle(this.headerrow).height;
-        return toNum(hheight) + this.rect.top;
+        const height = toNum(getComputedStyle(this.headerrow).height);
+        if (height < (this.rect.top * -1)) return '';
+        return `${height + this.rect.top}px`;
     }
     
     getLeft() {
-        return this.rect.left + window.pageXOffset;
+        const left = this.rect.left + window.pageXOffset;
+        return `${left}px`
     }
 
     updateHeaderRow() {
