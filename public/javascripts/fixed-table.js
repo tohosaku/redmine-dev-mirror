@@ -27,19 +27,20 @@ class ColumnWidth {
     }
 }
 
-class ColumnCollection {
+class ColumnCollection extends Array {
 
     constructor(fixedtable, headers, items) {
+        super();
         this.fixedtable = fixedtable;
-        this.cols = items.map((item, i) => 
-        ({
+        items.forEach((item, i) => 
+        this.push({
             head: new ColumnWidth(headers[i]),
             item: new ColumnWidth(item)
         }));
     }
     
     update() {
-        this.cols.forEach(c => {
+        this.forEach(c => {
             const itemwidth = c.item.element.clientWidth;
             c.item.setWidth(itemwidth);
             c.head.setWidth(itemwidth);
@@ -48,7 +49,7 @@ class ColumnCollection {
     }
     
     clear() {
-        this.cols.forEach(c => {
+        this.forEach(c => {
             c.item.clear();
             c.head.clear();
         })
@@ -57,6 +58,16 @@ class ColumnCollection {
     reset() {
         this.clear();
         this.update();
+    }
+
+    setStyle(style) {
+        this[0].head.style.borderLeftColor = style == '' ? '' : style.borderLeftColor
+        this[0].head.style.borderLeftStyle = style == '' ? '' : style.borderLeftStyle
+        this[0].head.style.borderLeftWidth = style == '' ? '' : style.borderLeftWidth
+        const n = this.length - 1;
+        this[n].head.style.borderLeftColor = style == '' ? '' : style.borderRightColor
+        this[n].head.style.borderLeftStyle = style == '' ? '' : style.borderRightStyle
+        this[n].head.style.borderLeftWidth = style == '' ? '' : style.borderRightWidth
     }
 }
 
@@ -85,6 +96,7 @@ class FixedTable {
             headerRowStyle.top = pos.top;
             headerRowStyle.position = pos.position;
             headerRowStyle.zIndex = pos.zIndex;
+            this.columns.setStyle(pos.tableStyle);
         }
     
         const tbodyStyle = this.itemrow.parentElement.style;
@@ -101,9 +113,10 @@ class FixedTable {
 
     getPosition() {
         if (this.rect.top < 0) {
-            return { top: '0', position: 'fixed', left: `${this.getLeft()}px`, zIndex: 1, tbodyTop: `${this.getTbodyTop()}px`, tbodyPosition: 'relative' }
+            const tableStyle = getComputedStyle(this.table);
+            return { top: '0', position: 'fixed', tableStyle: tableStyle, left: `${this.getLeft()}px`, zIndex: 1, tbodyTop: `${this.getTbodyTop()}px`, tbodyPosition: 'relative' }
         } else {
-            return { top: '', position: '', zIndex: '', tbodyTop: '', tbodyPosition: '' }
+            return { top: '', position: '', tableStyle: '', zIndex: '', tbodyTop: '', tbodyPosition: '' }
         }
     }
 
