@@ -82,6 +82,7 @@ class FixedTable {
     init() {
         this.columns =  new ColumnCollection(this, Array.from(this.headerrow.children), Array.from(this.itemrow.children));
         this.columns.update();
+        this.copyIdColumnSettings()
     }
 
     update() {
@@ -134,6 +135,21 @@ class FixedTable {
 
     updateHeaderRow() {
         this.headerrow.style.width = getComputedStyle(this.itemrow).width
+    }
+
+    copyIdColumnSettings() {
+        const th = this.table.querySelector('th.id');
+        const source = th.firstElementChild;
+
+        const style = getComputedStyle(source)
+        const left  = style.getPropertyValue('padding-left');
+        const right = style.getPropertyValue('padding-right');
+
+        Array.from(this.table.querySelectorAll('td.id')).forEach(td => {
+            const style = td.firstElementChild.style;
+            style.setProperty('padding-left', left);
+            style.setProperty('padding-right', right);
+        })
     }
 
     get topLine() {
