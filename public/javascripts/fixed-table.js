@@ -183,5 +183,7 @@ if (table !== null) {
     }
 
     window.addEventListener('scroll', rafFactory(() => fixedtable.update()), { passive: true });
-    window.addEventListener('resize', rafFactory(() => fixedtable.reset()), { passive: true });
+
+    const observer = new ResizeObserver(() => fixedtable.reset());
+    observer.observe(table);
 }
