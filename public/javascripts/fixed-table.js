@@ -112,9 +112,9 @@ class FixedTable {
     }
 
     getPosition() {
-        if (this.rect.top < 0) {
+        if (this.rect.top < this.topLine) {
             const tableStyle = getComputedStyle(this.table);
-            return { top: '0', position: 'fixed', tableStyle: tableStyle, left: this.getLeft(), zIndex: 1, tbodyTop: this.getTbodyTop(), tbodyPosition: 'relative' }
+            return { top: `${this.topLine}px`, position: 'fixed', tableStyle: tableStyle, left: this.getLeft(), zIndex: 1, tbodyTop: this.getTbodyTop(), tbodyPosition: 'relative' }
         } else {
             return { top: '', position: '', tableStyle: '', zIndex: '', tbodyTop: '', tbodyPosition: '' }
         }
@@ -122,7 +122,8 @@ class FixedTable {
 
     getTbodyTop() {
         const height = toNum(getComputedStyle(this.headerrow).height);
-        if (height < (this.rect.top * -1)) return '';
+        const top = this.rect.top - this.topLine
+        if (height < (top * -1)) return '';
         return `${height + this.rect.top}px`;
     }
     
@@ -133,6 +134,10 @@ class FixedTable {
 
     updateHeaderRow() {
         this.headerrow.style.width = getComputedStyle(this.itemrow).width
+    }
+
+    get topLine() {
+        return isMobile() ? 64 : 0;
     }
 
     get rect() {
