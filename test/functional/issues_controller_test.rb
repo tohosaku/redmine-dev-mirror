@@ -2344,7 +2344,7 @@ class IssuesControllerTest < Redmine::ControllerTest
   end
 
   def test_show_should_list_subtasks
-    Issue.
+    issue = Issue.
       create!(
         :project_id => 1, :author_id => 1, :tracker_id => 1,
         :parent_issue_id => 1, :subject => 'Child Issue'
@@ -2353,6 +2353,11 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_select 'div#issue_tree' do
       assert_select 'td.subject', :text => /Child Issue/
+    end
+    assert_select 'div#tab-content-history' do
+      assert_select 'div[id=?]', "change-#{Issue.find(1).journals.last.id}" do
+        assert_select 'ul.details', :text => "Subtask ##{issue.id} added"
+      end
     end
   end
 
@@ -3212,6 +3217,11 @@ class IssuesControllerTest < Redmine::ControllerTest
       assert_select 'select[name=?]', 'issue[done_ratio]'
       assert_select 'input[name=?][value=?]', 'issue[custom_field_values][2]', 'Default string'
       assert_select 'input[name=?]', 'issue[watcher_user_ids][]'
+
+      # Assert submit buttons
+      assert_select 'input[type=submit][name=?]', 'commit'
+      assert_select 'input[type=submit][name=?]', 'continue'
+      assert_select 'input[type=submit][name=?]', 'follow', 0
     end
 
     # Be sure we don't display inactive IssuePriorities
@@ -3822,6 +3832,25 @@ class IssuesControllerTest < Redmine::ControllerTest
     end
 
     assert_select 'div#trackers_description', 0
+  end
+
+  def test_get_new_should_show_create_and_follow_button_when_issue_is_subtask_and_back_url_is_present
+    @request.session[:user_id] = 2
+    get :new, params: {
+      project_id: 1,
+      issue: {
+        parent_issue_id: 2
+      },
+      back_url: "/issues/2"
+    }
+    assert_response :success
+
+    assert_select 'form#issue-form' do
+      # Assert submit buttons
+      assert_select 'input[type=submit][name=?]', 'commit'
+      assert_select 'input[type=submit][name=?]', 'continue'
+      assert_select 'input[type=submit][name=?]', 'follow'
+    end
   end
 
   def test_update_form_for_new_issue
@@ -8197,6 +8226,31 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_redirected_to :controller => 'issues', :action => 'index'
     assert_equal 'Successful deletion.', flash[:notice]
     assert !(Issue.find_by_id(1) || Issue.find_by_id(2) || Issue.find_by_id(6))
+  end
+
+  def test_destroy_child_issue
+    parent = Issue.create!(:project_id => 1, :author_id => 1, :tracker_id => 1, :subject => 'Parent Issue')
+    child = Issue.create!(:project_id => 1, :author_id => 1, :tracker_id => 1, :subject => 'Child Issue', :parent_issue_id => parent.id)
+    assert child.is_descendant_of?(parent.reload)
+
+    @request.session[:user_id] = 2
+    assert_difference 'Issue.count', -1 do
+      delete :destroy, :params => {:id => child.id}
+    end
+    assert_response :found
+    assert_redirected_to :action => 'index', :project_id => 'ecookbook'
+
+    parent.reload
+    assert_equal 2, parent.journals.count
+
+    get :show, :params => {:id => parent.id}
+    assert_response :success
+
+    assert_select 'div#tab-content-history' do
+      assert_select 'div[id=?]', "change-#{parent.journals.last.id}" do
+        assert_select 'ul.details', :text => "Subtask deleted (##{child.id})"
+      end
+    end
   end
 
   def test_destroy_parent_and_child_issues

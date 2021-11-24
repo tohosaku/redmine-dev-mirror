@@ -339,6 +339,7 @@ class Query < ActiveRecord::Base
   end)
 
   scope :sorted, lambda {order(:name, :id)}
+  scope :only_public, ->{ where(visibility: VISIBILITY_PUBLIC) }
 
   # to be implemented in subclasses that have a way to determine a default
   # query for the given options
@@ -1440,11 +1441,28 @@ class Query < ActiveRecord::Base
     prefix = suffix = nil
     prefix = '%' if options[:ends_with]
     suffix = '%' if options[:starts_with]
-    prefix = suffix = '%' if prefix.nil? && suffix.nil?
-    queried_class.send(
-      :sanitize_sql_for_conditions,
-      [Redmine::Database.like(db_field, '?', :match => options[:match]), "#{prefix}#{value}#{suffix}"])
+    if prefix || suffix
+      value = queried_class.sanitize_sql_like value
+      queried_class.sanitize_sql_for_conditions(
+        [Redmine::Database.like(db_field, '?', :match => options[:match]), "#{prefix}#{value}#{suffix}"]
+      )
+    else
+      queried_class.sanitize_sql_for_conditions(
+        ::Query.tokenized_like_conditions(db_field, value, **options)
+      )
+    end
   end
+
+  # rubocop:disable Lint/IneffectiveAccessModifier
+  def self.tokenized_like_conditions(db_field, value, **options)
+    tokens = Redmine::Search::Tokenizer.new(value).tokens
+    tokens = [value] unless tokens.present?
+    sql, values = tokens.map do |token|
+      [Redmine::Database.like(db_field, '?', options), "%#{sanitize_sql_like token}%"]
+    end.transpose
+    [sql.join(" AND "), *values]
+  end
+  # rubocop:enable Lint/IneffectiveAccessModifier
 
   # Adds a filter for the given custom field
   def add_custom_field_filter(field, assoc=nil)
